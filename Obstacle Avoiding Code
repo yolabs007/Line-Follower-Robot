@@ -22,8 +22,8 @@ void setup() {
   pinMode (trigpin, OUTPUT);
   pinMode (echopin, INPUT );
   
-  motor1.setSpeed(150);          // set the motor speed to 0-255
-  motor2.setSpeed(150);
+  motor1.setSpeed(255);          // set the motor speed to 0-255
+  motor2.setSpeed(255);
 
 }
 
