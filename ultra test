@@ -1,0 +1,30 @@
+#define echopin A3 // echo pin
+#define trigpin A4 // Trigger pin
+
+int distance_F;
+long distance;
+
+void setup() {
+  Serial.begin(9600);        
+  Serial.println("Start");
+
+  pinMode (trigpin, OUTPUT);
+  pinMode (echopin, INPUT );
+  
+}
+
+void loop() {
+ distance_F = data();
+ Serial.print("S=");
+ Serial.println(distance_F);
+}
+
+
+long data(){
+  digitalWrite(trigpin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigpin, HIGH);
+  delayMicroseconds(10);
+  distance = pulseIn (echopin, HIGH);
+  return distance / 29 / 2;
+}
