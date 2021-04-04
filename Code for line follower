@@ -1,8 +1,8 @@
 #include <AFMotor.h>
 
 
-#define lefts A0 
-#define rights A5 
+#define lefts A3 
+#define rights A4 
 
 
 AF_DCMotor motor1(1, MOTOR12_8KHZ); 
@@ -14,6 +14,9 @@ void setup() {
 
   pinMode(lefts,INPUT);
   pinMode(rights,INPUT);
+
+  motor1.setSpeed(255);
+  motor2.setSpeed(255);
 
   Serial.begin(9600);
   
@@ -27,26 +30,23 @@ void loop(){
   if(analogRead(lefts)<=400 && analogRead(rights)<=400){
     //stop
     motor1.run(FORWARD);
-    motor1.setSpeed(100);
     motor2.run(FORWARD);
-    motor2.setSpeed(100);
+
   }
   //line detected by left sensor
   else if(analogRead(lefts)<=400 && !analogRead(rights)<=400){
     //turn left
     motor1.run(FORWARD);
-    motor1.setSpeed(90);
     motor2.run(BACKWARD);
-    motor2.setSpeed(100);
+
 
   }
   //line detected by right sensor
   else if(!analogRead(lefts)<=400 && analogRead(rights)<=400){;
     //turn right
     motor1.run(BACKWARD);
-    motor1.setSpeed(90);
     motor2.run(FORWARD);
-    motor2.setSpeed(100);
+
 
   }
   //line detected by none
