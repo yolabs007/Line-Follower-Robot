@@ -1,5 +1,5 @@
-#define echopin A3 // echo pin
-#define trigpin A4 // Trigger pin
+#define echopin A4 // echo pin
+#define trigpin A5 // Trigger pin
 
 int distance_F;
 long distance;
