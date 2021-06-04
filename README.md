@@ -103,4 +103,4 @@ void loop(){
 # Mounting 
 
 * Place the IR sensors very near to ground.
-* Do not give more space in between two sensors.
+* Do not give more space in-between two sensors.
