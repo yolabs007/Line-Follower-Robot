@@ -34,7 +34,7 @@ if(digitalRead(7)==0)      // if IR sensor detects the bright color
 * Select the Digital write code (Below) for Line Follower Robot for better accuracy.
 
 
-![IR Sensor](https://hackster.imgix.net/uploads/attachments/1196200/line_follower_robot_using_arduino_l298_motor_driver_and_ir_sensor_rbsPmUjP1z.jpg)
+![IR Sensor](https://content.instructables.com/ORIG/FFZ/OG6Q/JGGTIBUY/FFZOG6QJGGTIBUY.jpg?auto=webp)
 
 
 ```C++
