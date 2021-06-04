@@ -1,7 +1,7 @@
 # Line-Follower-Robot
 
 
-* Check the sensors with IR sensor test Code first, then go with Line follower Code.
+* Check the IR sensors with IR sensor test Code (Below one) first, then go with Line follower Code.
 
 ```C++
 
@@ -29,7 +29,7 @@ if(digitalRead(7)==0)      // if IR sensor detects the bright color
 ```
 
 
-* Select the Digital write code for Line Follower Robot for better accuracy.
+* Select the Digital write code (Below) for Line Follower Robot for better accuracy.
 
 ```C++
 
