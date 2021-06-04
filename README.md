@@ -3,6 +3,8 @@
 
 * Check the IR sensors with IR sensor test Code (Below one) first, then go with Line follower Code.
 
+![IR Sensor](https://5.imimg.com/data5/WA/GS/MY-5726208/delta-plc-repair-service-500x500.jpg)
+
 ```C++
 
 void setup() {
@@ -30,6 +32,10 @@ if(digitalRead(7)==0)      // if IR sensor detects the bright color
 
 
 * Select the Digital write code (Below) for Line Follower Robot for better accuracy.
+
+
+![IR Sensor](https://hackster.imgix.net/uploads/attachments/1196200/line_follower_robot_using_arduino_l298_motor_driver_and_ir_sensor_rbsPmUjP1z.jpg)
+
 
 ```C++
 
