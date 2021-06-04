@@ -2,6 +2,12 @@
 
 
 * Check the sensors with IR sensor test Code first, then go with Line follower Code.
+
+```javascript
+
+```
+
+
 * Select the Digital write code for Line Follower Robot for better accuracy.
 
 # Mounting 
