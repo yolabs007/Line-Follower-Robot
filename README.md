@@ -110,3 +110,4 @@ void loop(){
 
 * Place the IR sensors very near to ground.
 * Do not give more space in-between two sensors.
+* Don't use sharp turns (90 degree turns), it's very difficult for vehicle to turn.
