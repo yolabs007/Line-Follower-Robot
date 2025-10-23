@@ -1,3 +1,12 @@
+/*
+1. Connection 
+SCL- SCL - D22 
+SDA- SDA - D21 
+3v3 -3v3 for ESP32
+GND - GND 
+RST and Vin - keep them open only. connect RST if you want to reselt or control youjr IMU by using code
+*/
+
 #include <Arduino.h>
 #include "BluetoothSerial.h"
 #include <Wire.h>
