@@ -1,4 +1,4 @@
-// ===== Grid Solver — start button (D5), END box stop + LED (D2), TURN_SPEED=100 =====
+// ===== Grid Solver — START btn (D5), END LED (D2), TURN_SPEED=100, L/R finish like U-turn =====
 #include <BluetoothSerial.h>
 BluetoothSerial SerialBT;
 
@@ -11,7 +11,7 @@ const int L4 = 4,  L3 = 15, L2 = 34, L1 = 35,
 
 // --------- UI pins ---------
 const int START_BTN = 5;   // momentary to GND (INPUT_PULLUP)
-const int RUN_LED   = 2;   // goes HIGH when run is over (END box)
+const int RUN_LED   = 2;   // goes HIGH when END box detected
 
 // Polarity from sanity: RAW==1 on black, RAW==0 on white
 bool ACTIVE_LOW = false;
@@ -29,7 +29,7 @@ const unsigned long UTURN_TO    = 2000;   // 180°
 const unsigned long STRAIGHT_TO = 400;    // straight confirm
 const unsigned long RECENTER_MS = 180;    // lockout
 const unsigned long GAP_MS      = 250;    // min gap between junctions
-const unsigned long MIN_SPIN_AFTER_GATE_MS = 150; // must spin at least this after gate
+const unsigned long MIN_SPIN_AFTER_GATE_MS = 150; // must spin at least this after gate- increase if you feel turn is not full 
 
 // END box: treat as end if majority white
 const int END_WHITE_MIN = 7;   // 7/8 or all-white → END
@@ -131,7 +131,7 @@ bool junctionTriggered(){
 }
 
 // --- State machine ---
-enum { IDLE= -1, FOLLOW=0, NUDGE=1, TURN_L=2, TURN_R=3, UTURN=4, GO_STRAIGHT=6, RECENTER=7, HALT=9 };
+enum { IDLE=-1, FOLLOW=0, NUDGE=1, TURN_L=2, TURN_R=3, UTURN=4, GO_STRAIGHT=6, RECENTER=7, HALT=9 };
 int state=IDLE; unsigned long stateStart=0;
 
 // Latching info around a junction
@@ -176,7 +176,7 @@ void setup(){
   pinMode(START_BTN, INPUT_PULLUP);
   pinMode(RUN_LED, OUTPUT); digitalWrite(RUN_LED, LOW);
 
-  Serial.println("Grid solver: start button on D5; END box stops & lights D2; TURN_SPEED=100.");
+  Serial.println("Grid solver: START on D5; END LED on D2; TURN_SPEED=100; L/R finish like U-turn.");
   SerialBT.println("Grid solver ready.");
   waitForStartPress();
   enter(FOLLOW);
@@ -187,8 +187,6 @@ void loop(){
   if(state==HALT){
     motorsAllLow();
     digitalWrite(RUN_LED, HIGH);
-    // Optional: press START again to restart a new run:
-    // if (digitalRead(START_BTN)==LOW) { delay(30); while(digitalRead(START_BTN)==LOW){} digitalWrite(RUN_LED,LOW); enter(FOLLOW); }
     delay(50);
     return;
   }
@@ -266,86 +264,85 @@ void loop(){
     return;
   }
 
-  // ===== LEFT TURN: Gate L4 white, finish on R2 black->white after gate + min spin ====
+  // ===== LEFT TURN: Gate L4 white, finish like U-turn (center capture) =====
   if(state==TURN_L){
     spinLeft(TURN_SPEED);
 
-    static bool gateL=false;                  // gate reached?
-    static unsigned long gateAt=0;            // time gate hit
-    static int  prevR2=1;                     // R2 last state (1=black, 0=white)
-    if(millis()-stateStart < 20) { gateL=false; gateAt=0; prevR2=bR2; } // reset on entry
+    static bool gateL=false;
+    static unsigned long gateAt=0;
+    if(millis()-stateStart < 20) { gateL=false; gateAt=0; }  // reset on entry
 
-    // Gate hit?
+    // Gate when outer-left sees white (we've entered the left lane)
     if(!gateL && (bL4==0)){
-      gateL=true; gateAt=millis(); prevR2=bR2;
-      char msg[64]; snprintf(msg,sizeof(msg),"LEFT Gate L4@%lums R2=%d", gateAt%100000, bR2);
+      gateL = true; gateAt = millis();
+      char msg[64]; snprintf(msg,sizeof(msg),"LEFT Gate L4@%lums", gateAt%100000);
       Serial.println(msg); SerialBT.println(msg);
     }
 
-    // Finish only on edge after gate + min spin time
+    // After gate: keep rotating until line is centered like U-turn
     if(gateL){
-      bool minTimeOK = (millis() - gateAt) >= MIN_SPIN_AFTER_GATE_MS;
-      // detect R2 edge: black(1) -> white(0)
-      if(minTimeOK && (prevR2==1) && (bR2==0)){
+      bool sidesBlackOK = leftSideBlack() && rightSideBlack();
+      if( centersBothL1R1White() && sidesBlackOK
+          && (millis()-gateAt) >= MIN_SPIN_AFTER_GATE_MS ){
         unsigned long now = millis();
-        char msg[64]; snprintf(msg,sizeof(msg),"LEFT Finish R2 edge@%lums Δ=%lums",
-                               now%100000, (now-gateAt));
+        char msg[64]; snprintf(msg,sizeof(msg),
+          "LEFT Finish center aligned@%lums Δ=%lums", now%100000, (now-gateAt));
         Serial.println(msg); SerialBT.println(msg);
         enter(RECENTER);
         return;
       }
     }
 
-    prevR2 = bR2;
-
+    // Safety timeout
     if(millis()-stateStart >= TURN_TO){
       unsigned long now = millis();
-      char msg[64]; snprintf(msg,sizeof(msg),"LEFT Timeout@%lums R2=%d", now%100000, bR2);
+      char msg[64]; snprintf(msg,sizeof(msg),"LEFT Timeout@%lums", now%100000);
       Serial.println(msg); SerialBT.println(msg);
       enter(RECENTER);
     }
     return;
   }
 
-  // ===== RIGHT TURN: Gate R4 white, finish on L2 black->white after gate + min spin ====
+  // ===== RIGHT TURN: Gate R4 white, finish like U-turn (center capture) =====
   if(state==TURN_R){
     spinRight(TURN_SPEED);
 
     static bool gateR=false;
     static unsigned long gateAt=0;
-    static int  prevL2=1;
-    if(millis()-stateStart < 20) { gateR=false; gateAt=0; prevL2=bL2; }
+    if(millis()-stateStart < 20) { gateR=false; gateAt=0; }  // reset on entry
 
+    // Gate when outer-right sees white (we've entered the right lane)
     if(!gateR && (bR4==0)){
-      gateR=true; gateAt=millis(); prevL2=bL2;
-      char msg[64]; snprintf(msg,sizeof(msg),"RIGHT Gate R4@%lums L2=%d", gateAt%100000, bL2);
+      gateR = true; gateAt = millis();
+      char msg[64]; snprintf(msg,sizeof(msg),"RIGHT Gate R4@%lums", gateAt%100000);
       Serial.println(msg); SerialBT.println(msg);
     }
 
+    // After gate: keep rotating until line is centered like U-turn
     if(gateR){
-      bool minTimeOK = (millis() - gateAt) >= MIN_SPIN_AFTER_GATE_MS;
-      if(minTimeOK && (prevL2==1) && (bL2==0)){
+      bool sidesBlackOK = leftSideBlack() && rightSideBlack();
+      if( centersBothL1R1White() && sidesBlackOK
+          && (millis()-gateAt) >= MIN_SPIN_AFTER_GATE_MS ){
         unsigned long now = millis();
-        char msg[64]; snprintf(msg,sizeof(msg),"RIGHT Finish L2 edge@%lums Δ=%lums",
-                               now%100000, (now-gateAt));
+        char msg[64]; snprintf(msg,sizeof(msg),
+          "RIGHT Finish center aligned@%lums Δ=%lums", now%100000, (now-gateAt));
         Serial.println(msg); SerialBT.println(msg);
         enter(RECENTER);
         return;
       }
     }
 
-    prevL2 = bL2;
-
+    // Safety timeout
     if(millis()-stateStart >= TURN_TO){
       unsigned long now = millis();
-      char msg[64]; snprintf(msg,sizeof(msg),"RIGHT Timeout@%lums L2=%d", now%100000, bL2);
+      char msg[64]; snprintf(msg,sizeof(msg),"RIGHT Timeout@%lums", now%100000);
       Serial.println(msg); SerialBT.println(msg);
       enter(RECENTER);
     }
     return;
   }
 
-  // ===== U-TURN: gate on any center white, finish on (L1&R1 both white) + sides black ====
+  // ===== U-TURN: gate on any center white, finish on (L1&R1 both white) + sides black =====
   if(state==UTURN){
     spinLeft(TURN_SPEED);
 
