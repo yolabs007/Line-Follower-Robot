@@ -1,0 +1,73 @@
+// ===== Sensor-Only Sanity Check (motors pulled LOW) =====
+// Motors kept LOW so nothing moves; prints 8 sensors continuously.
+
+#include <Arduino.h>
+
+// --- Motor pins (held LOW) ---
+const int LF = 13, LB = 12, RF = 14, RB = 27;
+
+// --- Sensor pins (left -> right). L3 on GPIO15 ---
+const int L4 = 4,  L3 = 15, L2 = 34, L1 = 35,
+          R1 = 32, R2 = 33, R3 = 25, R4 = 26;
+
+// If your sensors output 1 on black, leave false.
+// If they output 0 on black, set true to invert.
+bool ACTIVE_LOW = false;
+
+inline void motorsAllLow() {
+  pinMode(LF, OUTPUT); digitalWrite(LF, LOW);
+  pinMode(LB, OUTPUT); digitalWrite(LB, LOW);
+  pinMode(RF, OUTPUT); digitalWrite(RF, LOW);
+  pinMode(RB, OUTPUT); digitalWrite(RB, LOW);
+}
+
+inline int norm(int raw) {            // 1 = black, 0 = white after normalization
+  return ACTIVE_LOW ? !raw : raw;
+}
+
+void setup() {
+  // 1) Force motor driver inputs LOW immediately (safety)
+  motorsAllLow();
+  delay(30);
+
+  // 2) Serial + sensor pin modes
+  Serial.begin(115200);
+
+  pinMode(L4, INPUT); pinMode(L3, INPUT);
+  pinMode(L2, INPUT); pinMode(L1, INPUT);
+  pinMode(R1, INPUT); pinMode(R2, INPUT);
+  pinMode(R3, INPUT); pinMode(R4, INPUT);
+
+  Serial.println("\n=== SENSOR SANITY (motors held LOW) ===");
+  Serial.println("NORM: 1=black, 0=white  |  RAW: direct digitalRead()");
+}
+
+void loop() {
+  // Read RAW
+  int rL4=digitalRead(L4), rL3=digitalRead(L3),
+      rL2=digitalRead(L2), rL1=digitalRead(L1),
+      rR1=digitalRead(R1), rR2=digitalRead(R2),
+      rR3=digitalRead(R3), rR4=digitalRead(R4);
+
+  // Normalize (1=black, 0=white)
+  int bL4=norm(rL4), bL3=norm(rL3),
+      bL2=norm(rL2), bL1=norm(rL1),
+      bR1=norm(rR1), bR2=norm(rR2),
+      bR3=norm(rR3), bR4=norm(rR4);
+
+  // Print compact (about 10 Hz)
+  static uint32_t t0=0;
+  if (millis() - t0 >= 100) {
+    t0 = millis();
+    Serial.printf("NORM L4:%d L3:%d L2:%d L1:%d | R1:%d R2:%d R3:%d R4:%d\n",
+                  bL4,bL3,bL2,bL1,bR1,bR2,bR3,bR4);
+    Serial.printf("RAW  L4:%d L3:%d L2:%d L1:%d | R1:%d R2:%d R3:%d R4:%d\n",
+                  rL4,rL3,rL2,rL1,rR1,rR2,rR3,rR4);
+  }
+
+  // Keep motor pins LOW just in case (belt & suspenders)
+  digitalWrite(LF, LOW); digitalWrite(LB, LOW);
+  digitalWrite(RF, LOW); digitalWrite(RB, LOW);
+
+  delay(10);
+}
